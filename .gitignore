@@ -5,3 +5,18 @@
 /DiscountCodeService/.vs/DiscountCodeService
 /DiscountCodeService/obj
 /DiscountCodeService/bin/Debug/net8.0
+/DiscountCodeApplication/.vs
+/DiscountCodeApplication/bin/Debug/net8.0
+/DiscountCodeApplication/Logs
+/DiscountCodeApplication/obj
+# Visual Studio cache and user files
+/.vs
+/*.suo
+/*.user
+/*.userosscache
+/*.sln.docstates
+/Logs
+
+# Build output
+/bin/
+/obj/

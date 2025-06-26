@@ -1,0 +1,177 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>SignalR Client Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr/dist/browser/signalr.min.js"></script>
+</head>
+<body>
+    <button id="connectBtn">Connect</button>
+    <button id="generateCodeBtn" disabled>Generate Codes</button>
+    <button id="useCodeBtn" disabled>Use Code</button>
+    <button id="getCodesBtn" disabled>Get All Codes</button>
+    <button id="getRecentCodesBtn" disabled>Get Recent Codes</button>
+    <input type="text" id="codeInput" placeholder="Enter code here" />
+
+    <div id="messages"></div>
+
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("https://localhost:44347/discountCodeHub")
+            .withAutomaticReconnect()
+            .build();
+
+        async function startConnection() {
+            try {
+                if (connection.state !== signalR.HubConnectionState.Disconnected) {
+                    // Avoid starting if already connecting/connected
+                    return;
+                }
+                await connection.start();
+                appendMessage("Connected to Hub");
+                // Enable all relevant buttons
+                document.getElementById("sendBtn") && (document.getElementById("sendBtn").disabled = false);
+                document.getElementById("generateCodeBtn").disabled = false;
+                document.getElementById("useCodeBtn").disabled = false;
+                document.getElementById("getCodesBtn").disabled = false;
+                document.getElementById("getRecentCodesBtn").disabled = false;
+                // Also enable the connect button to allow reconnect if needed
+                document.getElementById("connectBtn").disabled = true;
+            } catch (err) {
+                console.error("Connection failed:", err);
+                appendMessage("Connection failed. Retrying in 5 seconds...");
+                setTimeout(startConnection, 5000);
+            }
+        }
+
+        // Handle connection close - disable buttons
+        connection.onclose(err => {
+            appendMessage("Connection closed: " + (err ? err.message || err.toString() : "No error"));
+            document.querySelectorAll("button").forEach(btn => btn.disabled = true);
+            document.getElementById("connectBtn").disabled = false; // allow reconnect
+        });
+
+        // Optional: handle reconnection
+        connection.on("Reconnecting", err => {
+            appendMessage("Reconnecting: " + (err ? err.message || err.toString() : "No error"));
+        });
+        connection.on("Reconnected", id => {
+            appendMessage("Reconnected with ID: " + id);
+        });
+
+        // Error message from server
+        connection.on("Error", message => {
+            appendMessage("Error: " + message);
+        });
+
+        // Actual event handlers for server events
+        connection.on("CodeUsed", code => {
+            appendMessage("Code used: " + code);
+        });
+        connection.on("ReceiveMessage", message => {
+            appendMessage("Received: " + message);
+        });
+        connection.on("CodeGenerated", code => {
+            appendMessage("Code generated: " + code);
+        });
+
+        // Button handlers
+        document.getElementById("connectBtn").onclick = () => startConnection();
+
+        document.getElementById("generateCodeBtn").onclick = () => {
+            const count = 5;
+            const length = 8;
+            connection.invoke("GenerateCode", count, length)
+                .then(() => appendMessage("GenerateCode invoked successfully"))
+                .catch(err => {
+                    console.error("GenerateCode failed:", err);
+                    appendMessage("GenerateCode failed: " + (err.message || err.toString()));
+                });
+        };
+
+        document.getElementById("useCodeBtn").onclick = () => {
+            const code = document.getElementById("codeInput").value.trim();
+            if (code === "") {
+                alert("Please enter a code to use");
+                return;
+            }
+            connection.invoke("UseCode", code)
+                .then(resultByte => {
+                    interpretUseCodeResult(resultByte);
+                })
+                .catch(err => {
+                    console.error("UseCode failed:", err);
+                    appendMessage("UseCode failed: " + (err.message || err.toString()));
+                });
+        };
+
+        // Interpret the server returned byte
+        function interpretUseCodeResult(byteResult) {
+            switch (byteResult) {
+                case 0: // Success
+                    appendMessage("Code successfully used!");
+                    break;
+                case 1: // Failure
+                    appendMessage("Failed: Code not found or invalid.");
+                    break;
+                case 2: // AlreadyUsed
+                    appendMessage("Failed: This code has already been used.");
+                    break;
+                case 3: // Expired
+                    appendMessage("Failed: This code is expired.");
+                    break;
+                case 4: // Inactive
+                    appendMessage("Failed: This code is inactive.");
+                    break;
+                case 5: // Deleted
+                    appendMessage("Failed: This code has been deleted.");
+                    break;
+                case 6: // Exception or unknown error
+                default:
+                    appendMessage("Failed: An unexpected error occurred.");
+                    break;
+            }
+        }
+
+        // For getting all codes
+        document.getElementById("getCodesBtn").onclick = () => {
+            connection.invoke("GetCodes")
+                .then(codes => {
+                    appendMessage("All Codes:");
+                    codes.forEach(c => appendMessage("- " + c));
+                })
+                .catch(err => {
+                    console.error("GetCodes failed:", err);
+                    appendMessage("Failed to retrieve codes: " + (err.message || err.toString()));
+                });
+        };
+
+        // For getting recent codes
+        document.getElementById("getRecentCodesBtn").onclick = () => {
+            const count = 10; // or any number you prefer
+            connection.invoke("GetRecentCodes", count)
+                .then(codes => {
+                    appendMessage(`Recent ${count} codes:`);
+                    codes.forEach(c => appendMessage("- " + c));
+                })
+                .catch(err => {
+                    console.error("GetRecentCodes failed:", err);
+                    appendMessage("Failed to retrieve recent codes: " + (err.message || err.toString()));
+                });
+        };
+
+        // Utility to append messages
+        function appendMessage(msg) {
+            const div = document.createElement("div");
+            div.textContent = msg;
+            document.getElementById("messages").appendChild(div);
+        }
+
+        // Optional: start connection automatically on page load
+        // startConnection();
+        // Optionally, automatically start connection when page loads
+        // Uncomment below to auto-connect on load
+        // startConnection();
+    </script>
+</body>
+</html>
