@@ -1,4 +1,5 @@
 using DiscountCodeService.Hubs;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,7 +10,7 @@ builder.Services.AddSignalR();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowOrigin", builder =>
-        builder.WithOrigins(["http://localhost:5000", "https://localhost:5000"])
+        builder.WithOrigins("http://localhost:5000", "https://localhost:5000") // Fix array syntax to proper method calls
                .AllowAnyHeader()
                .AllowAnyMethod()
                .AllowCredentials()
@@ -17,13 +18,21 @@ builder.Services.AddCors(options =>
         );
 });
 
+// Serilog setup: async sinks for console and file
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Debug()
+    .WriteTo.Async(a => a.Console())
+    .WriteTo.Async(a => a.File("Logs/log-.txt", rollingInterval: RollingInterval.Day))
+    .ReadFrom.Configuration(builder.Configuration) // Ensure Serilog.Settings.Configuration is referenced
+    .CreateLogger();
+builder.Host.UseSerilog(Log.Logger); // Pass the logger instance explicitly
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 

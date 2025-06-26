@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace DiscountCodeServer.Models
+namespace DiscountCodeService.Models
 {
     [Index(nameof(Code), IsUnique = true)]
     public class DiscountCode

@@ -1,7 +1,7 @@
-﻿using DiscountCodeServer.Models;
+﻿using DiscountCodeService.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace DiscountCodeServer.DB
+namespace DiscountCodeService.DB
 {
     public class DiscountCodeContext : DbContext
     {

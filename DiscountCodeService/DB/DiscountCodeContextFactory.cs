@@ -1,8 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using DiscountCodeService.DB;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
 
-namespace DiscountCodeServer.DB
+namespace DiscountCodeService.DB
 {
     public class DiscountCodeContextFactory : IDesignTimeDbContextFactory<DiscountCodeContext>
     {
