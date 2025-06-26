@@ -20,3 +20,6 @@
 # Build output
 /bin/
 /obj/
+/DiscountCodeApplication.Test/obj/
+/DiscountCodeApplication.Test/bin/Debug/net8.0/DiscountCodeApplication.Test.dll
+/DiscountCodeApplication.Test/bin/Debug/net8.0/DiscountCodeApplication.Test.pdb
