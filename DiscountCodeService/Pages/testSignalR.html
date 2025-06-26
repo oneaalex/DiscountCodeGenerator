@@ -1,0 +1,69 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>SignalR Client Test</title>
+<script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr/dist/browser/signalr.min.js"></script>
+</head>
+<body>
+<button id="connectBtn">Connect</button>
+<button id="sendBtn" disabled>Send Message</button>
+<div id="messages"></div>
+
+<script>
+const connection = new signalR.HubConnectionBuilder()
+    .withUrl("https://localhost:44347/discountCodeHub")
+    .withAutomaticReconnect()
+    .build();
+
+async function startConnection() {
+    try {
+        await connection.start();
+        appendMessage("Connected to Hub");
+        document.getElementById("sendBtn").disabled = false;
+        // Optional: Log connection ID for troubleshooting
+        // appendMessage("Connection ID: " + connection.connectionId);
+    } catch (err) {
+        console.error("Connection failed: ", err);
+        appendMessage("Connection failed. Retrying in 5 seconds...");
+        setTimeout(startConnection, 5000); // Retry
+    }
+}
+
+document.getElementById("connectBtn").onclick = () => {
+    startConnection();
+};
+
+document.getElementById("sendBtn").onclick = () => {
+    connection.invoke("SendMessage", "Hello from JavaScript")
+        .catch(err => {
+            console.error("Send failed: ", err);
+            appendMessage("Send failed: " + err);
+        });
+};
+
+// Receive messages from server
+connection.on("ReceiveMessage", message => {
+    appendMessage("Received: " + message);
+});
+
+// Optional: Handle connection lifecycle events
+connection.onclose(error => {
+    appendMessage("Connection closed: " + (error || "No error"));
+    document.getElementById("sendBtn").disabled = true;
+});
+connection.onreconnecting(error => {
+    appendMessage("Reconnecting: " + (error || "No error"));
+});
+connection.onreconnected(connectionId => {
+    appendMessage("Reconnected with ID: " + connectionId);
+});
+
+function appendMessage(msg) {
+    const div = document.createElement("div");
+    div.textContent = msg;
+    document.getElementById("messages").appendChild(div);
+}
+</script>
+</body>
+</html>

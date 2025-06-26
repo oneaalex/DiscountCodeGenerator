@@ -23,7 +23,8 @@
       "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
-      }
+      },
+      "applicationUrl": "http://localhost:42735" // only HTTP here
     },
     "Container (Dockerfile)": {
       "commandName": "Docker",
