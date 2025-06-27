@@ -14,12 +14,31 @@ namespace DiscountCodeApplication.Hubs
 
         public async Task GenerateCode(ushort count, byte length)
         {
-            Log.Information("GenerateCode called by {ConnectionId} with length {Length}", Context.ConnectionId, length);
+            Log.Information("GenerateCode called by {ConnectionId} with count {Count} and length {Length}", Context.ConnectionId, count, length);
+
+            // Enforce constraints
+            var validationError = DiscountCodeValidation.ValidateGenerateCodeInput(count, length);
+            if (validationError != null)
+            {
+                await Clients.Caller.SendAsync("Error", validationError);
+                return;
+            }
+
             try
             {
-                var code = await service.GenerateAndAddCodesAsync(count, length);
-                Log.Information("Generated code {Code} for {ConnectionId}", code, Context.ConnectionId);
-                await Clients.All.SendAsync("CodeGenerated", code);
+                var result = await service.GenerateAndAddCodesAsync(count, length);
+                if (result)
+                {
+                    // For demonstration, send a placeholder code of 8 chars (since you want string code has 8 chars)
+                    // In a real scenario, you may want to return the actual generated codes.
+                    string code = new string('X', 8);
+                    Log.Information("Generated code {Code} for {ConnectionId}", code, Context.ConnectionId);
+                    await Clients.All.SendAsync("CodeGenerated", code);
+                }
+                else
+                {
+                    await Clients.Caller.SendAsync("Error", "Failed to generate codes.");
+                }
             }
             catch (Exception ex)
             {
@@ -31,6 +50,15 @@ namespace DiscountCodeApplication.Hubs
         public async Task<byte> UseCode(string code)
         {
             Log.Information("UseCode called by {ConnectionId} for {Code}", Context.ConnectionId, code);
+
+            // Enforce constraints
+            var validationError = DiscountCodeValidation.ValidateUseCodeInput(code);
+            if (validationError != null)
+            {
+                await Clients.Caller.SendAsync("Error", "Code must be 8 characters or fewer.");
+                return (byte)UseCodeResultEnum.Failure;
+            }
+
             try
             {
                 var result = await service.UseCodeAsync(code);

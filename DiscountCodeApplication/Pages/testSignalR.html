@@ -7,6 +7,10 @@
 </head>
 <body>
     <button id="connectBtn">Connect</button>
+    <input type="number" id="countInput" min="1" max="2000" value="5" style="width:80px;" />
+    <label for="countInput">Count</label>
+    <input type="number" id="lengthInput" min="7" max="8" value="8" style="width:80px;" />
+    <label for="lengthInput">Length</label>
     <button id="generateCodeBtn" disabled>Generate Codes</button>
     <button id="useCodeBtn" disabled>Use Code</button>
     <button id="getCodesBtn" disabled>Get All Codes</button>
@@ -79,11 +83,8 @@
         document.getElementById("connectBtn").onclick = () => startConnection();
 
         document.getElementById("generateCodeBtn").onclick = () => {
-            const countInput = prompt("Enter number of codes to generate:", "5");
-            const lengthInput = prompt("Enter length of each code:", "8");
-
-            const count = parseInt(countInput, 10);
-            const length = parseInt(lengthInput, 10);
+            const count = parseInt(document.getElementById("countInput").value, 10);
+            const length = parseInt(document.getElementById("lengthInput").value, 10);
 
             if (isNaN(count) || isNaN(length)) {
                 alert("Please enter valid numeric values for count and length.");
@@ -97,7 +98,6 @@
                     appendMessage("GenerateCode failed: " + (err.message || err.toString()));
                 });
         };
-
 
         document.getElementById("useCodeBtn").onclick = () => {
             const code = document.getElementById("codeInput").value.trim();
