@@ -48,7 +48,7 @@ namespace DiscountCodeApplication.Repository
             }
         }
 
-        public async Task<DiscountCode> GetDiscountCodeByCodeAsync(string code)
+        public async Task<DiscountCode?> GetDiscountCodeByCodeAsync(string code)
         {
             string key = $"{DISCOUNT_CODE_CACHE_KEY_PREFIX}:code:{code}";
             try
@@ -75,7 +75,7 @@ namespace DiscountCodeApplication.Repository
                     Log.Information("Cache hit for discount code '{Code}'", code);
                 }
 
-                return cachedCode!;
+                return cachedCode;
             }
             catch (Exception ex)
             {
@@ -282,8 +282,10 @@ namespace DiscountCodeApplication.Repository
                     .Take(RECENT_CODES_COUNT); // prefetch cache size
 
                 // Decide to fetch from cache or DB
-                List<DiscountCode> recentCodes = await cacheService.GetAsync<List<DiscountCode>>(RECENT_CODES_CACHE_KEY);
-                if (recentCodes == null)
+                List<DiscountCode>? discountCodes = await cacheService.GetAsync<List<DiscountCode>>(RECENT_CODES_CACHE_KEY);
+                List<DiscountCode> recentCodes = discountCodes ?? [];
+
+                if (recentCodes.Count == 0)
                 {
                     Log.Information("Cache miss for recent discount codes");
                     recentCodes = await recentCodesQuery.ToListAsync();
@@ -297,11 +299,10 @@ namespace DiscountCodeApplication.Repository
                 }
 
                 // Now just select the top 'count' after sorting
-                return recentCodes
+                return [.. recentCodes
                     .OrderByDescending(c => c.CreatedAt)  // ensure most recent first
                     .Take(count)
-                    .Select(c => c.Code)
-                    .ToList();
+                    .Select(c => c.Code)];
 
             }
             catch (Exception ex)

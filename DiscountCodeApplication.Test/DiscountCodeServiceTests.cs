@@ -24,17 +24,14 @@ namespace DiscountCodeApplication.Test
         private readonly Mock<IDiscountCodeGenerator> _generatorMock = new();
         private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
 
-        private IDiscountCodeService CreateService()
-        {
-            return new Services.DiscountCodeService(_repoMock.Object, _generatorMock.Object, _unitOfWorkMock.Object);
-        }
+        private IDiscountCodeService CreateService => new Services.DiscountCodeService(_repoMock.Object, _generatorMock.Object, _unitOfWorkMock.Object);
 
         [Fact]
         public async Task UseCodeAsync_ReturnsFailure_WhenCodeNotFound()
         {
-            _repoMock.Setup(r => r.GetDiscountCodeByCodeAsync("NOTFOUND")).ReturnsAsync((DiscountCode)null);
+            Moq.Language.Flow.IReturnsResult<IDiscountCodeRepository> returnsResult = _repoMock.Setup(r => r.GetDiscountCodeByCodeAsync("NOTFOUND")).ReturnsAsync((DiscountCode?)null);
 
-            var service = CreateService();
+            var service = CreateService;
             var result = await service.UseCodeAsync("NOTFOUND");
 
             Assert.Equal((byte)UseCodeResultEnum.Failure, result);
@@ -46,7 +43,7 @@ namespace DiscountCodeApplication.Test
             var code = new DiscountCode { Code = "DELETED", DeletedAt = DateTime.UtcNow };
             _repoMock.Setup(r => r.GetDiscountCodeByCodeAsync("DELETED")).ReturnsAsync(code);
 
-            var service = CreateService();
+            var service = CreateService;
             var result = await service.UseCodeAsync("DELETED");
 
             Assert.Equal((byte)UseCodeResultEnum.Deleted, result);
@@ -58,7 +55,7 @@ namespace DiscountCodeApplication.Test
             var code = new DiscountCode { Code = "INACTIVE", IsActive = false };
             _repoMock.Setup(r => r.GetDiscountCodeByCodeAsync("INACTIVE")).ReturnsAsync(code);
 
-            var service = CreateService();
+            var service = CreateService;
             var result = await service.UseCodeAsync("INACTIVE");
 
             Assert.Equal((byte)UseCodeResultEnum.Inactive, result);
@@ -70,7 +67,7 @@ namespace DiscountCodeApplication.Test
             var code = new DiscountCode { Code = "USED", IsUsed = true, IsActive = true };
             _repoMock.Setup(r => r.GetDiscountCodeByCodeAsync("USED")).ReturnsAsync(code);
 
-            var service = CreateService();
+            var service = CreateService;
             var result = await service.UseCodeAsync("USED");
 
             Assert.Equal((byte)UseCodeResultEnum.AlreadyUsed, result);
@@ -82,7 +79,7 @@ namespace DiscountCodeApplication.Test
             var code = new DiscountCode { Code = "EXPIRED", IsActive = true, ExpirationDate = DateTime.UtcNow.AddDays(-1) };
             _repoMock.Setup(r => r.GetDiscountCodeByCodeAsync("EXPIRED")).ReturnsAsync(code);
 
-            var service = CreateService();
+            var service = CreateService;
             var result = await service.UseCodeAsync("EXPIRED");
 
             Assert.Equal((byte)UseCodeResultEnum.Expired, result);
@@ -100,7 +97,7 @@ namespace DiscountCodeApplication.Test
             };
             _repoMock.Setup(r => r.GetDiscountCodeByCodeAsync("VALID")).ReturnsAsync(code);
 
-            var service = CreateService();
+            var service = CreateService;
             var result = await service.UseCodeAsync("VALID");
 
             Assert.Equal((byte)UseCodeResultEnum.Success, result);
@@ -113,7 +110,7 @@ namespace DiscountCodeApplication.Test
         {
             _repoMock.Setup(r => r.GetDiscountCodeByCodeAsync("EX")).ThrowsAsync(new Exception("db error"));
 
-            var service = CreateService();
+            var service = CreateService;
             var result = await service.UseCodeAsync("EX");
 
             Assert.Equal((byte)UseCodeResultEnum.Exception, result);

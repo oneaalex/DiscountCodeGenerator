@@ -5,23 +5,17 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using DiscountCodeApplication.Repository;
 
-public class DiscountCodePreloadHostedService : IHostedService
+namespace DiscountCodeApplication
 {
-    private readonly IServiceProvider _serviceProvider;
-
-    public DiscountCodePreloadHostedService(IServiceProvider serviceProvider)
+    public class DiscountCodePreloadHostedService(IServiceProvider serviceProvider) : IHostedService
     {
-        _serviceProvider = serviceProvider;
-    }
-
-    public async Task StartAsync(CancellationToken cancellationToken)
-    {
-        using (var scope = _serviceProvider.CreateScope())
+        public async Task StartAsync(CancellationToken cancellationToken)
         {
+            using var scope = serviceProvider.CreateScope();
             var repository = scope.ServiceProvider.GetRequiredService<IDiscountCodeRepository>();
             await repository.PreloadDiscountCodeCachesAsync();
         }
-    }
 
-    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+    }
 }

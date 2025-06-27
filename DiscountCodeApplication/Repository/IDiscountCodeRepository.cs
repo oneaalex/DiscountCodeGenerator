@@ -4,7 +4,7 @@ namespace DiscountCodeApplication.Repository
 {
     public interface IDiscountCodeRepository
     {
-        Task<DiscountCode> GetDiscountCodeByCodeAsync(string code);
+        Task<DiscountCode?> GetDiscountCodeByCodeAsync(string code);
         Task AddRangeDiscountCodeAsync(IEnumerable<DiscountCode> codes);
         Task UpdateDiscountCodeAsync(DiscountCode code);
         Task DeleteDiscountCodeAsync(DiscountCode code);
