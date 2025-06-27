@@ -12,7 +12,7 @@ namespace DiscountCodeApplication.Hubs
             await Clients.All.SendAsync("ReceiveMessage", message);
         }
 
-        public async Task GenerateCode(ushort count, byte length)
+        public async Task<bool> GenerateCode(ushort count, byte length)
         {
             Log.Information("GenerateCode called by {ConnectionId} with count {Count} and length {Length}", Context.ConnectionId, count, length);
 
@@ -21,7 +21,7 @@ namespace DiscountCodeApplication.Hubs
             if (validationError != null)
             {
                 await Clients.Caller.SendAsync("Error", validationError);
-                return;
+                return false;
             }
 
             try
@@ -34,16 +34,19 @@ namespace DiscountCodeApplication.Hubs
                     string code = new string('X', 8);
                     Log.Information("Generated code {Code} for {ConnectionId}", code, Context.ConnectionId);
                     await Clients.All.SendAsync("CodeGenerated", code);
+                    return true;
                 }
                 else
                 {
                     await Clients.Caller.SendAsync("Error", "Failed to generate codes.");
+                    return false;
                 }
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error generating code for {ConnectionId}", Context.ConnectionId);
                 await Clients.Caller.SendAsync("Error", "Failed to generate code");
+                return false;
             }
         }
 

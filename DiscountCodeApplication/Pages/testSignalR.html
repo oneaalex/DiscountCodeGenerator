@@ -92,7 +92,13 @@
             }
 
             connection.invoke("GenerateCode", count, length)
-                .then(() => appendMessage("GenerateCode invoked successfully"))
+                .then(result => {
+                    if (result === true) {
+                        appendMessage("Codes generated successfully.");
+                    } else {
+                        appendMessage("Failed to generate codes.");
+                    }
+                })
                 .catch(err => {
                     console.error("GenerateCode failed:", err);
                     appendMessage("GenerateCode failed: " + (err.message || err.toString()));
