@@ -79,8 +79,17 @@
         document.getElementById("connectBtn").onclick = () => startConnection();
 
         document.getElementById("generateCodeBtn").onclick = () => {
-            const count = 5;
-            const length = 8;
+            const countInput = prompt("Enter number of codes to generate:", "5");
+            const lengthInput = prompt("Enter length of each code:", "8");
+
+            const count = parseInt(countInput, 10);
+            const length = parseInt(lengthInput, 10);
+
+            if (isNaN(count) || isNaN(length)) {
+                alert("Please enter valid numeric values for count and length.");
+                return;
+            }
+
             connection.invoke("GenerateCode", count, length)
                 .then(() => appendMessage("GenerateCode invoked successfully"))
                 .catch(err => {
@@ -88,6 +97,7 @@
                     appendMessage("GenerateCode failed: " + (err.message || err.toString()));
                 });
         };
+
 
         document.getElementById("useCodeBtn").onclick = () => {
             const code = document.getElementById("codeInput").value.trim();

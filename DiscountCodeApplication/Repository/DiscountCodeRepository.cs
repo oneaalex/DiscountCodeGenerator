@@ -237,26 +237,28 @@ namespace DiscountCodeApplication.Repository
         public async Task<List<string>> GetAllCodesAsync()
         {
             const string ALL_CODES_CACHE_KEY = "all_discount_codes";
+            const int MAX_CODES = 1000;
+
             try
             {
-                // Try to get all codes from cache
+                // Try to get cached codes
                 var codes = await cacheService.GetAsync<List<string>>(ALL_CODES_CACHE_KEY);
-
-                if (codes == null)
-                {
-                    Log.Information("Cache miss for all discount codes");
-                    codes = await context.DiscountCodes
-                        .Select(dc => dc.Code)
-                        .ToListAsync();
-
-                    await cacheService.SetAsync(ALL_CODES_CACHE_KEY, codes, TimeSpan.FromMinutes(10));
-                    Log.Information("All discount codes loaded from DB and cached");
-                }
-                else
+                if (codes != null)
                 {
                     Log.Information("Cache hit for all discount codes");
+                    return codes;
                 }
 
+                // Cache miss: fetch from DB with limit
+                Log.Information("Cache miss for all discount codes");
+                codes = await context.DiscountCodes
+                    .OrderByDescending(c => c.CreatedAt) // Optional: order by most recent
+                    .Select(dc => dc.Code)
+                    .Take(MAX_CODES)
+                    .ToListAsync();
+
+                await cacheService.SetAsync(ALL_CODES_CACHE_KEY, codes, TimeSpan.FromMinutes(10));
+                Log.Information("All discount codes loaded from DB and cached");
                 return codes;
             }
             catch (Exception ex)
@@ -268,18 +270,23 @@ namespace DiscountCodeApplication.Repository
 
         public async Task<List<string>> GetMostRecentCodesAsync(int count = 10)
         {
+            if (count <= 0)
+                throw new ArgumentException("Count must be greater than zero.", nameof(count));
+
             try
             {
-                // Try to get the recent codes from cache
-                var recentCodes = await cacheService.GetAsync<List<DiscountCode>>(RECENT_CODES_CACHE_KEY);
+                // Example: Query directly from the database, filtering with LINQ
+                var recentCodesQuery = context.DiscountCodes
+                    .Where(c => !c.IsUsed && c.IsActive && c.ExpirationDate > DateTime.UtcNow && !c.IsDeleted)
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Take(RECENT_CODES_COUNT); // prefetch cache size
 
+                // Decide to fetch from cache or DB
+                List<DiscountCode> recentCodes = await cacheService.GetAsync<List<DiscountCode>>(RECENT_CODES_CACHE_KEY);
                 if (recentCodes == null)
                 {
                     Log.Information("Cache miss for recent discount codes");
-                    recentCodes = await context.DiscountCodes
-                        .OrderByDescending(c => c.CreatedAt)
-                        .Take(RECENT_CODES_COUNT)
-                        .ToListAsync();
+                    recentCodes = await recentCodesQuery.ToListAsync();
 
                     await cacheService.SetAsync(RECENT_CODES_CACHE_KEY, recentCodes, TimeSpan.FromMinutes(10));
                     Log.Information("Recent discount codes loaded from DB and cached");
@@ -289,12 +296,13 @@ namespace DiscountCodeApplication.Repository
                     Log.Information("Cache hit for recent discount codes");
                 }
 
-                // Return only the most recent 'count' codes as strings
+                // Now just select the top 'count' after sorting
                 return recentCodes
-                    .OrderByDescending(c => c.CreatedAt)
+                    .OrderByDescending(c => c.CreatedAt)  // ensure most recent first
                     .Take(count)
                     .Select(c => c.Code)
                     .ToList();
+
             }
             catch (Exception ex)
             {
@@ -302,6 +310,8 @@ namespace DiscountCodeApplication.Repository
                 throw;
             }
         }
+
+
 
         public async Task PreloadDiscountCodeCachesAsync()
         {
