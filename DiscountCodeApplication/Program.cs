@@ -22,7 +22,7 @@ services.AddSingleton<ICacheService, RedisCacheService>();
 services.AddSingleton<IConnectionMultiplexer>(sp =>
 {
     var configuration = builder.Configuration.GetSection("Redis");
-    string connectionString = configuration["ConnectionString"];
+    var connectionString = configuration["ConnectionString"];
     if (string.IsNullOrWhiteSpace(connectionString))
         throw new ArgumentNullException(nameof(connectionString), "Redis connection string is missing");
     return ConnectionMultiplexer.Connect(connectionString);
@@ -50,7 +50,7 @@ builder.Host.UseSerilog(Log.Logger); // Pass the logger instance explicitly
 
 // Repositories & Services
 services.AddScoped<IDiscountCodeRepository, CachingDiscountCodeRepository>();
-services.AddScoped<IDiscountCodeGenerator, DiscountCodeGenerator>();
+services.AddSingleton<IDiscountCodeGenerator, DiscountCodeGenerator>();
 services.AddScoped<IDiscountCodeService, DiscountCodeService>();
 services.AddScoped<IUnitOfWork, UnitOfWork>();
 services.AddHostedService<DiscountCodePreloadHostedService>();

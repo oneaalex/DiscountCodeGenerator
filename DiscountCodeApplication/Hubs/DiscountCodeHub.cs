@@ -59,7 +59,7 @@ namespace DiscountCodeApplication.Hubs
                 {
                     // For demonstration, send a placeholder code of 8 chars (since you want string code has 8 chars)
                     // In a real scenario, you may want to return the actual generated codes.
-                    string code = new string('X', 8);
+                    string code = new string('*', length);
                     Log.Information("Generated code {Code} for {ConnectionId}", code, Context.ConnectionId);
                     await Clients.All.SendAsync("CodeGenerated", code);
                     return true;

@@ -6,6 +6,33 @@ This project is a Razor Pages application for generating, managing, and redeemin
 
 ---
 
+## Recent Changes
+
+### 1. Discount Code Cache Preloading
+
+- **Background Preloading:**  
+  The application now preloads discount code caches in the background at startup using a hosted service (`DiscountCodePreloadHostedService`). This ensures that recent and all discount codes are available in the cache without blocking the main application thread.
+- **Dependency Injection:**  
+  The repository responsible for preloading is injected into the hosted service, following best practices for maintainability and testability.
+
+### 2. SignalR Package
+
+- The unnecessary `Microsoft.AspNetCore.SignalR` package reference was removed from the project dependencies.
+
+### 3. Authorization and User Management
+
+> **Note:**  
+> The project was designed to use JWT (JSON Web Token) for authorization. However, implementing JWT-based authentication requires a user management system, including user registration, login, and logout functionality.  
+>  
+> These features (user accounts, login, logout) are not currently implemented in this project. To enable secure JWT authorization, you would need to add:
+> - User registration and storage (e.g., with ASP.NET Core Identity or a custom user table)
+> - Login endpoints to issue JWT tokens upon successful authentication
+> - Logout mechanism (typically handled client-side by removing the JWT)
+>  
+> Without these, JWT authorization cannot be fully enabled.
+
+---
+
 ## How the DiscountCodeService Works
 
 The `DiscountCodeService` is responsible for generating, storing, retrieving, and using discount codes in a thread-safe manner. It interacts with a repository for data access, a code generator for creating unique codes, and a unit of work for transaction management.
