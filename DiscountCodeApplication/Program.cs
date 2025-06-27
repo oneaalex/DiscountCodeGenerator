@@ -49,10 +49,11 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog(Log.Logger); // Pass the logger instance explicitly  
 
 // Repositories & Services
-services.AddScoped<IDiscountCodeRepository, DiscountCodeRepository>();
+services.AddScoped<IDiscountCodeRepository, CachingDiscountCodeRepository>();
 services.AddScoped<IDiscountCodeGenerator, DiscountCodeGenerator>();
-services.AddScoped<IDiscountCodeService, DiscountCodeApplication.Services.DiscountCodeService>();
+services.AddScoped<IDiscountCodeService, DiscountCodeService>();
 services.AddScoped<IUnitOfWork, UnitOfWork>();
+services.AddHostedService<DiscountCodePreloadHostedService>();
 
 // Database context
 services.AddDbContext<DiscountCodeContext>(options =>
@@ -79,11 +80,5 @@ app.UseAuthorization();
 app.MapRazorPages();
 
 app.MapHub<DiscountCodeHub>("/discountCodeHub");
-
-using (var scope = app.Services.CreateScope())
-{
-    var repo = scope.ServiceProvider.GetRequiredService<IDiscountCodeRepository>();
-    await repo.PreloadDiscountCodeCachesAsync();
-}
 
 app.Run();

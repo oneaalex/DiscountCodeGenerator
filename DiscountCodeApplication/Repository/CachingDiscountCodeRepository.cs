@@ -6,7 +6,7 @@ using Serilog;
 
 namespace DiscountCodeApplication.Repository
 {
-    public class DiscountCodeRepository(DiscountCodeContext context, ICacheService cacheService) : IDiscountCodeRepository
+    public class CachingDiscountCodeRepository(DiscountCodeContext context, ICacheService cacheService) : IDiscountCodeRepository
     {
         private const int RECENT_CODES_COUNT = 1000; // Number of recent codes to cache
         private const string RECENT_CODES_CACHE_KEY = "recent_discount_codes";
