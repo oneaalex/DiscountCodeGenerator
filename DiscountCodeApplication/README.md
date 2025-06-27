@@ -75,10 +75,6 @@ You can test the service using unit tests or integration tests. Here are some su
   - Handling invalid, expired, or already-used codes.
   - Ensuring thread safety by simulating concurrent calls.
 
-#### Example (using xUnit and Moq):
-
----
-
 ### 2. Integration Testing
 
 - Set up a test database.
@@ -132,4 +128,67 @@ The `Pages/testSignalR.html` file provides a simple web interface to interact wi
 
 ---
 
-**Note:** For best results, ensure your tests cover edge cases such as concurrent usage, expired codes, and repository failures.
+## How to Run the Application
+
+### Prerequisites
+
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) installed
+- A running Redis instance (for caching)
+- (Optional) SQL Server or your configured database for EF Core
+
+### 1. Configure the Application
+
+- Update your `appsettings.json` with the correct connection strings for your database and Redis server.
+- Example:
+
+- By default, the app will be available at `https://localhost:44347` (or the port specified in `launchSettings.json`).
+
+### 2. Build and Run
+
+- Open a terminal in the project root.
+- Run the following commands:
+
+### 3. Database Migrations
+
+- If you have not already created the database, run:
+
+(Requires the [EF Core CLI tools](https://learn.microsoft.com/en-us/ef/core/cli/dotnet).)
+
+---
+
+## How to Use the Application
+
+### Razor Pages UI
+
+- Navigate to `https://localhost:44347` in your browser.
+- Use the provided Razor Pages interface to:
+  - Generate new discount codes
+  - View all codes
+  - Redeem codes
+
+### Real-Time Testing with SignalR
+
+- Open `Pages/testSignalR.html` in your browser.
+- Use the buttons to:
+  - Connect to the SignalR hub
+  - Generate codes
+  - Retrieve all or recent codes
+  - Redeem a code
+
+All actions and responses will be shown in the messages area at the bottom of the page.
+
+### API Endpoints (if exposed)
+
+- The application may expose API endpoints for discount code operations. Check the `Hubs/DiscountCodeHub.cs` and Razor Pages handlers for available endpoints and their usage.
+
+---
+
+## Notes
+
+- Ensure Redis and your database are running before starting the app.
+- Logs are written using Serilog; check the console or configured sinks for details.
+- For development, you may need to trust the ASP.NET Core development certificate.
+
+---
+
+**You are now ready to run and use the Discount Code Application!**

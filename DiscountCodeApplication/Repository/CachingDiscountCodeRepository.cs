@@ -11,6 +11,7 @@ namespace DiscountCodeApplication.Repository
         private const int RECENT_CODES_COUNT = 1000; // Number of recent codes to cache
         private const string RECENT_CODES_CACHE_KEY = "recent_discount_codes";
         private const string DISCOUNT_CODE_CACHE_KEY_PREFIX = "discountcode";
+        private const int Value = 10;
 
         public async Task<DiscountCode> GetByIdAsync(int id)
         {
@@ -95,13 +96,16 @@ namespace DiscountCodeApplication.Repository
                 await context.DiscountCodes.AddRangeAsync(codes);
                 await context.SaveChangesAsync();
 
-                // Batch update: refresh the recent codes cache once
-                await UpdateRecentDiscountCodeCacheAsync(null!);
-
+                // Cache each code individually
                 foreach (var code in codes)
                 {
-                    Log.Information("Added discount code '{Code}", code.Code);
+                    string codeKey = $"{DISCOUNT_CODE_CACHE_KEY_PREFIX}:code:{code.Code}";
+                    await cacheService.SetAsync(codeKey, code, TimeSpan.FromMinutes(Value));
+                    Log.Information("Added and cached discount code '{Code}'", code.Code);
                 }
+
+                // Batch update: refresh the recent codes cache once
+                await UpdateRecentDiscountCodeCacheAsync(null!);
             }
             catch (Exception ex)
             {
@@ -126,7 +130,7 @@ namespace DiscountCodeApplication.Repository
                 Log.Information("Invalidated cache for discount code '{Code}'", code.Code);
 
                 // Update the cache of recent codes
-                    await UpdateRecentDiscountCodeCacheAsync(code);
+                await UpdateRecentDiscountCodeCacheAsync(code);
             }
             catch (Exception ex)
             {
@@ -311,8 +315,6 @@ namespace DiscountCodeApplication.Repository
                 throw;
             }
         }
-
-
 
         public async Task PreloadDiscountCodeCachesAsync()
         {
