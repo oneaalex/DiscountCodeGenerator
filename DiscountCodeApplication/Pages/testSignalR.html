@@ -21,7 +21,7 @@
 
     <script>
         const connection = new signalR.HubConnectionBuilder()
-            .withUrl("https://localhost:44347/discountCodeHub")
+            .withUrl("https://localhost:44347/discountCodeHub?secret=YourSuperSecretKey123")
             .withAutomaticReconnect()
             .build();
 

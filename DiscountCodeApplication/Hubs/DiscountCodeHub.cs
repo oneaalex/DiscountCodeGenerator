@@ -1,12 +1,40 @@
 ﻿using DiscountCodeApplication.Services;
 using DiscountCodeApplication.Services.Interfaces;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Configuration;
 using Serilog;
 
 namespace DiscountCodeApplication.Hubs
 {
-    public class DiscountCodeHub(IDiscountCodeService service) : Hub
+    public class DiscountCodeHub : Hub
     {
+        private readonly IDiscountCodeService _service;
+        private readonly string _expectedSecret;
+
+        public DiscountCodeHub(IDiscountCodeService service, IConfiguration config)
+        {
+            _service = service;
+
+            // Fix for CS8601: Ensure null safety by using null-coalescing operator
+            var signalRSection = config.GetSection("SignalR");
+            _expectedSecret = signalRSection?["Secret"] ?? string.Empty;
+        }
+
+        public override async Task OnConnectedAsync()
+        {
+            var httpContext = Context.GetHttpContext();
+            var providedSecret = httpContext?.Request.Query["secret"].ToString();
+
+            if (string.IsNullOrEmpty(providedSecret) || providedSecret != _expectedSecret)
+            {
+                await Clients.Caller.SendAsync("Error", "Unauthorized: Invalid secret.");
+                Context.Abort();
+                return;
+            }
+
+            await base.OnConnectedAsync();
+        }
+
         public async Task SendMessage(string message)
         {
             await Clients.All.SendAsync("ReceiveMessage", message);
@@ -26,7 +54,7 @@ namespace DiscountCodeApplication.Hubs
 
             try
             {
-                var result = await service.GenerateAndAddCodesAsync(count, length);
+                var result = await _service.GenerateAndAddCodesAsync(count, length);
                 if (result)
                 {
                     // For demonstration, send a placeholder code of 8 chars (since you want string code has 8 chars)
@@ -64,7 +92,7 @@ namespace DiscountCodeApplication.Hubs
 
             try
             {
-                var result = await service.UseCodeAsync(code);
+                var result = await _service.UseCodeAsync(code);
                 if (result == (byte)UseCodeResultEnum.Success)
                 {
                     Log.Information("Code {Code} used successfully by {ConnectionId}", code, Context.ConnectionId);
@@ -100,13 +128,12 @@ namespace DiscountCodeApplication.Hubs
             };
         }
 
-
         public async Task<List<string>> GetCodes()
         {
             Log.Information("GetCodes called by {ConnectionId}", Context.ConnectionId);
             try
             {
-                var codes = await service.GetAllCodesAsync();
+                var codes = await _service.GetAllCodesAsync();
                 Log.Information("Retrieved {Count} codes for {ConnectionId}", codes.Count, Context.ConnectionId);
                 return codes;
             }
@@ -122,7 +149,7 @@ namespace DiscountCodeApplication.Hubs
             Log.Information("GetRecentCodes called by {ConnectionId} with count {Count}", Context.ConnectionId, count);
             try
             {
-                var codes = await service.GetMostRecentCodesAsync(count);
+                var codes = await _service.GetMostRecentCodesAsync(count);
                 Log.Information("Retrieved {Count} recent codes for {ConnectionId}", codes.Count, Context.ConnectionId);
                 return codes;
             }
