@@ -1,13 +1,20 @@
 ﻿using Serilog;
 using StackExchange.Redis;
 using System.Text.Json;
-using System.Threading;
+using System.Text.Json.Serialization;
 
 namespace DiscountCodeApplication.Redis
 {
     public sealed class RedisCacheService(IConnectionMultiplexer redisConnection) : ICacheService
     {
         private readonly IDatabase _db = redisConnection.GetDatabase();
+
+        // Configure JsonSerializerOptions for consistent serialization/deserialization
+        private static readonly JsonSerializerOptions _jsonSerializerOptions = new() 
+        {
+            PropertyNameCaseInsensitive = true,
+            ReferenceHandler = ReferenceHandler.Preserve // Handle potential circular references if needed
+        };
 
         public async Task<T?> GetAsync<T>(string key, CancellationToken cancellationToken = default)
         {
@@ -22,7 +29,7 @@ namespace DiscountCodeApplication.Redis
                 Log.Information("Cache hit for key '{Key}'", key);
                 try
                 {
-                    return JsonSerializer.Deserialize<T>(value);
+                    return JsonSerializer.Deserialize<T>(value, _jsonSerializerOptions);
                 }
                 catch (Exception serEx)
                 {
@@ -44,7 +51,7 @@ namespace DiscountCodeApplication.Redis
                 string serializedValue;
                 try
                 {
-                    serializedValue = JsonSerializer.Serialize(value);
+                    serializedValue = JsonSerializer.Serialize(value, _jsonSerializerOptions);
                 }
                 catch (Exception serEx)
                 {

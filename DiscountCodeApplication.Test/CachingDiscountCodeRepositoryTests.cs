@@ -31,7 +31,7 @@ namespace DiscountCodeApplication.Test
             string code = "CODE456";
             var expectedCode = new DiscountCode { Code = code, IsActive = true };
             _mockCacheService.Setup(s => s.GetAsync<DiscountCode>($"discountcode:code:{code}", default))
-                .ReturnsAsync((DiscountCode)null);
+                .ReturnsAsync((DiscountCode?)null);
 
             _context.DiscountCodes.Add(expectedCode);
             await _context.SaveChangesAsync();
@@ -40,7 +40,7 @@ namespace DiscountCodeApplication.Test
             var result = await _repository.GetDiscountCodeByCodeAsync(code);
 
             // Assert
-            Assert.Equal(expectedCode.Code, result.Code);
+            Assert.Equal(expectedCode.Code, result?.Code);
             _mockCacheService.Verify(s => s.GetAsync<DiscountCode>($"discountcode:code:{code}", default), Times.Once);
             _mockCacheService.Verify(s => s.SetAsync($"discountcode:code:{code}", expectedCode, It.IsAny<TimeSpan>(), default), Times.Once);
         }
@@ -51,7 +51,7 @@ namespace DiscountCodeApplication.Test
             // Arrange
             string code = "NOTFOUND";
             _mockCacheService.Setup(s => s.GetAsync<DiscountCode>($"discountcode:code:{code}", default))
-                .ReturnsAsync((DiscountCode)null);
+                .ReturnsAsync((DiscountCode?)null);
 
             // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _repository.GetDiscountCodeByCodeAsync(code));
@@ -64,8 +64,8 @@ namespace DiscountCodeApplication.Test
             // Arrange
             var codes = new List<DiscountCode>
             {
-                new DiscountCode { Code = "ADD1", IsActive = true },
-                new DiscountCode { Code = "ADD2", IsActive = true }
+                new() { Code = "ADD1", IsActive = true },
+                new() { Code = "ADD2", IsActive = true }
             };
 
             // Act
@@ -88,7 +88,7 @@ namespace DiscountCodeApplication.Test
             await _repository.UpdateDiscountCodeAsync(code);
 
             var updated = await _context.DiscountCodes.FindAsync("UPD");
-            Assert.False(updated.IsActive);
+            Assert.False(updated?.IsActive);
             _mockCacheService.Verify(c => c.RemoveAsync("discountcode:UPD", default), Times.Once);
             _mockCacheService.Verify(c => c.RemoveAsync("discountcode:code:UPD", default), Times.Once);
             _mockCacheService.Verify(c => c.SetAsync("recent_discount_codes", It.IsAny<List<DiscountCode>>(), It.IsAny<TimeSpan>(), default), Times.Once);
@@ -114,7 +114,7 @@ namespace DiscountCodeApplication.Test
         public async Task GetRecentDiscountCodesAsync_ReturnsFromCache_IfPresent()
         {
             // Arrange
-            var expected = new List<DiscountCode> { new DiscountCode { Code = "RECENT" } };
+            var expected = new List<DiscountCode> { new() { Code = "RECENT" } };
             _mockCacheService.Setup(c => c.GetAsync<List<DiscountCode>>("recent_discount_codes", default))
                 .ReturnsAsync(expected);
 
@@ -197,9 +197,6 @@ namespace DiscountCodeApplication.Test
             _mockCacheService.Verify(c => c.SetAsync("all_discount_codes", It.IsAny<List<string>>(), It.IsAny<TimeSpan>(), default), Times.Once);
         }
 
-        public void Dispose()
-        {
-            _context.Dispose();
-        }
+        void IDisposable.Dispose() => _context.Dispose();
     }
 }
