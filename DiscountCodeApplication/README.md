@@ -154,6 +154,18 @@ The `Pages/testSignalR.html` file provides a simple web interface to interact wi
 
 (Requires the [EF Core CLI tools](https://learn.microsoft.com/en-us/ef/core/cli/dotnet).)
 
+Follow the instructions in that branch's README or Docker-related files to build and run the application in a containerized environment.
+
+---
+
+## Running the Application
+
+By default, the application runs in your local development environment.
+
+### Running with Docker
+
+If you want to run the app in Docker, switch to the `feature_docker` branch:
+
 ---
 
 ## How to Use the Application
